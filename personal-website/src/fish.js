@@ -3,21 +3,21 @@ import React, { useRef, useEffect } from 'react';
 class Fish {
     constructor(color, size, velocity) {
         this.color = new Float32Array(color);
+        this.eyeColor = new Float32Array([0, 0, 0, 1]);
         this.size = size;
         this.velocity = velocity;
 
-        const proportions = [1.0, 1.1, 1.0, 0.9, 0.8, 0.6, 0.4, 0.3];
+        this.eyeSize = 0.2 * this.size;
+
+        const proportions = [0.7, 1.0, 1.1, 1.0, 0.9, 0.8, 0.75, 0.6, 0.4, 0.3];
         this.sizes = Array.from(proportions).map((val) => val * this.size);
+        const sizeLength = this.sizes.length;
 
-        this.positions = Array(8).fill(null).map(() => ({x: 0, y: 0}));
+        this.positions = Array(sizeLength).fill(null).map(() => ({x: 0, y: 0}));
 
-        this.direction = Array(8).fill(Math.floor(Math.random() * 360));
+        this.direction = Array(sizeLength).fill(Math.floor(Math.random() * 360));
         this.turnChance = {dir: Math.random > 0.5 ? "r" : "l", chance: 0};
     }
-
-    // bodyFollow() {
-
-    // }
 
     changeDirection(amount) {
       const newDirection = this.turnChance.dir === "r" ? 
@@ -111,25 +111,71 @@ class Fish {
         this.moveBody(initial, partNumber + 1);
       }
     }
-    
-    getEyes() {
 
+    // Get the left and right of the circle
+    // Basically rotating from the direction the circle is facing by 90 degrees CW and CCW
+    getPartSides(partNumber) {
+      const dir = this.direction[partNumber];
+      const loc = this.positions[partNumber];
+      const size = this.sizes[partNumber];
+
+      const lAngle = (dir - 90) % 360;
+      const rAngle = (dir + 90) % 360;
+
+      const [lVecX, lVecY] = this.calculateVectorAmounts(lAngle);
+      const [rVecX, rVecY] = this.calculateVectorAmounts(rAngle);
+
+      return {
+        l: {x: loc.x + lVecX * size, y: loc.y + lVecY * size},
+        r: {x: loc.x + rVecX * size, y: loc.y + rVecY * size}
+      };
+    }
+    
+    // Getting the lines that connect the circles to each other on the edges
+    // (so the fish doesn't look like a maggot)
+    getBodyLines() {
+      const sideLocations = [];
+      this.positions.forEach((_, index) => {
+        sideLocations.push(this.getPartSides(index));
+      });
+
+      return sideLocations;
     }
 
-    getFins() {
-
+    // Getting the location of the eyes of the fish
+    getEyes() {
+      // Values from second body part (the back of the head)
+      const dir = this.direction[1];
+      const loc = this.positions[1];
+      const eyeOffset = 0.65; 
+      const forwardOffset = this.size * 0.1;
+    
+      // Left and right eye angles (move closer to front of head)
+      const lAngle = (dir - 80) % 360;
+      const rAngle = (dir + 80) % 360;
+    
+      // Move towards direction of the head a little bit
+      const [forwardX, forwardY] = this.calculateVectorAmounts(dir);
+    
+      // Get positions of the eyes
+      const [lVecX, lVecY] = this.calculateVectorAmounts(lAngle);
+      const [rVecX, rVecY] = this.calculateVectorAmounts(rAngle);
+    
+      return {
+        l: {
+          x: loc.x + forwardX * forwardOffset + lVecX * this.size * eyeOffset,
+          y: loc.y + forwardY * forwardOffset + lVecY * this.size * eyeOffset,
+        },
+        r: {
+          x: loc.x + forwardX * forwardOffset + rVecX * this.size * eyeOffset,
+          y: loc.y + forwardY * forwardOffset + rVecY * this.size * eyeOffset,
+        },
+      };
     }
 }
 
 const FishCanvas = () => {
   const canvasRef = useRef(null);
-
-  // function createTranslationMatrix(tx, ty) {
-  //   return [
-  //     1, 0, tx,
-  //     0, 1, ty
-  //   ];
-  // }
   
   function createRotationMatrix(angle) {
     const cos = Math.cos(angle);
@@ -140,19 +186,6 @@ const FishCanvas = () => {
       0, 0, 1
     ];
   }
-
-  // function multiplyMatrices(a, b) {
-  //   const result = [];
-  //   for (let row = 0; row < 3; row++) {
-  //     for (let col = 0; col < 3; col++) {
-  //       result[row * 3 + col] =
-  //         a[row * 3 + 0] * b[0 * 3 + col] +
-  //         a[row * 3 + 1] * b[1 * 3 + col] +
-  //         a[row * 3 + 2] * b[2 * 3 + col];
-  //     }
-  //   }
-  //   return result;
-  // }
 
   function makeCircleVertices(centerX, centerY, radius) {
     const vertices = [centerX, centerY];
@@ -235,7 +268,7 @@ const FishCanvas = () => {
     const resolutionLocation = gl.getUniformLocation(fishProgram, 'uResolution');
     const colorLocation = gl.getUniformLocation(fishProgram, 'fColor');
 
-    // Set canvas size once
+    // Get screen size
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
     gl.viewport(0, 0, canvas.width, canvas.height);
@@ -251,15 +284,17 @@ const FishCanvas = () => {
     gl.enableVertexAttribArray(vertexLocation);
     gl.vertexAttribPointer(vertexLocation, 2, gl.FLOAT, false, 0, 0);
 
-    // // Uniform resolution
-    // const resolutionUniformLocation = gl.getUniformLocation(fishHeadShaderProgram, 'uResolution');
-    // const transformMatrixUniformLocation = gl.getUniformLocation(fishHeadShaderProgram, 'uTransformMatrix');
-    // gl.uniform2f(resolutionUniformLocation, canvas.width, canvas.height);
-
     function render() {
+      // Get center of screen
+      const centerX = canvas.width / 2;
+      const centerY = canvas.height / 2;
+
       // Apply fish movements
       fish.possiblyChangeDirection(window.innerWidth, window.innerHeight);
       fish.moveHead();
+
+      const eyeLocations = fish.getEyes();
+      const bodySideLocations = fish.getBodyLines();
 
       gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
       gl.clearColor(0.08, 0.08, 0.08, 1.0);
@@ -282,6 +317,69 @@ const FishCanvas = () => {
         const rotationMatrix = createRotationMatrix(fish.direction[index]);
         gl.uniformMatrix3fv(resolutionLocation, false, rotationMatrix);
 
+        // Draw body circles
+        gl.drawArrays(gl.TRIANGLE_FAN, 0, position.length / 2);
+      });
+      
+      // Generate lines in body
+      const bodyLineVertices = [];
+      const bodyIndices = [
+        0, 1, 2,
+        0, 2, 3
+      ];
+
+      for (var side = 0; side < bodySideLocations.length - 1; side++) {
+        const {l: l1, r: r1} = bodySideLocations[side];
+        const {l: l2, r: r2} = bodySideLocations[side + 1];
+
+        bodyLineVertices.push([
+          l1.x + centerX, l1.y + centerY,
+          r1.x + centerX, r1.y + centerY,
+          r2.x + centerX, r2.y + centerY,
+          l2.x + centerX, l2.y + centerY,
+        ]);
+
+      }
+
+      bodyLineVertices.forEach((vertices) => {
+        // Bind body line vertices
+        const bodyLineBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, bodyLineBuffer);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
+
+        // Bind body indices
+        const bodyIndexBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, bodyIndexBuffer);
+        gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(bodyIndices), gl.STATIC_DRAW);
+
+        // Enable vertex attribute array
+        gl.enableVertexAttribArray(vertexLocation);
+        gl.vertexAttribPointer(vertexLocation, 2, gl.FLOAT, false, 0, 0);
+
+        // Set uniforms
+        gl.uniform2f(resolutionLocation, canvas.width, canvas.height);
+        gl.uniform4fv(colorLocation, fish.color);
+
+        // Draw body lines using indices
+        gl.drawElements(gl.TRIANGLES, bodyIndices.length, gl.UNSIGNED_SHORT, 0);
+      });
+
+      // Generate eyes
+      const eyeVertices = [];
+      eyeVertices.push(makeCircleVertices(eyeLocations.l.x + canvas.width / 2, eyeLocations.l.y + canvas.height / 2, fish.eyeSize));
+      eyeVertices.push(makeCircleVertices(eyeLocations.r.x + canvas.width / 2, eyeLocations.r.y + canvas.height / 2, fish.eyeSize));
+      
+      eyeVertices.forEach((position) => {
+        // Update buffer data for each body part
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(position), gl.STATIC_DRAW);
+
+        gl.enableVertexAttribArray(vertexLocation);
+        gl.vertexAttribPointer(vertexLocation, 2, gl.FLOAT, false, 0, 0);
+
+        gl.uniform2f(resolutionLocation, canvas.width, canvas.height);
+        gl.uniform4fv(colorLocation, fish.eyeColor);
+
+        // Draw eyes
         gl.drawArrays(gl.TRIANGLE_FAN, 0, position.length / 2);
       });
 
