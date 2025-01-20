@@ -10,9 +10,9 @@ function App() {
       <div className="header-wrapper">
         <div class="name-wrapper">
           <FishCanvas/>
-          <div class="name-text">
+          {/* <div class="name-text">
             DENNIS
-          </div>
+          </div> */}
         </div>
       </div>
       <p class="blah">
