@@ -1,7 +1,7 @@
 import React, { useRef, useEffect } from 'react';
 
 import './App.css';
-import FishCanvas from './fish';
+import FishCanvas from './fishRenderer';
 
 function App() {
   return (
