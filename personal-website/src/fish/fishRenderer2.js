@@ -2,74 +2,22 @@ import React, { useRef, useEffect } from 'react';
 import { Fish } from './Fish.js';
 
 const FishCanvas = () => {
+  // Setting up canvas
   const canvasRef = useRef(null);
 
-  function makeEllipseVertices(centerX, centerY, radius, circle = true, half = false, bodyAngle = 0, phi = 0) {
-    const vertices = [centerX, centerY];
-
-    var startTheta = 0;
-    var endTheta = 2 * Math.PI;
-    if (half && phi < 0) {
-      endTheta -= Math.PI;
-    } else if (half && phi > 0) {
-      startTheta += Math.PI;
-    }
-
-    // Loop through 45 segments
-    for (let i = 0; i <= 45; i++) {
-        const theta = startTheta + (i / 45) * (half ? 1 : 2) * (endTheta - startTheta);
-
-        let x, y;
-
-        if (circle) {
-            // Generate a circle
-            x = radius[0] * Math.cos(theta);
-            y = radius[0] * Math.sin(theta);
-        } else {
-            // Generate an ellipse
-            const defaultX = radius[0] * Math.cos(theta);
-            const defaultY = radius[1] * Math.sin(theta);
-
-            // Convert bodyAngle to radians
-            const angle = ((bodyAngle + phi) % 360) * (Math.PI / 180);
-
-            // Rotate ellipse
-            x = defaultX * Math.cos(angle) - defaultY * Math.sin(angle);
-            y = defaultX * Math.sin(angle) + defaultY * Math.cos(angle);
-        }
-
-        // Translate the rotated point to the center
-        vertices.push(centerX + x, centerY + y);
-    }
-
-    return new Float32Array(vertices);
-  }
-
-
-  function drawFish(fish) {
-    const canvas = canvasRef.current;
-    const gl = canvas.getContext('webgl', { stencil: true });
-
-    if (!gl) {
-      console.error('WebGL not supported');
-      return;
-    }
-
-    // Clearing stencil - stencil allows subtracting shapes from other shapes
-    gl.clearStencil(0);
-
+  function setupShaders(gl) {
     // Vertex shader
     const vertexShaderSource = `
-      precision mediump float;
+    precision mediump float;
 
-      attribute vec2 vertexPosition;
-      uniform vec2 uResolution;
+    attribute vec2 vertexPosition;
+    uniform vec2 uResolution;
 
-      void main() {
-        vec2 normalizedPosition = vertexPosition / uResolution * 2.0 - 1.0;
-        normalizedPosition.y = -normalizedPosition.y;
-        gl_Position = vec4(normalizedPosition, 0.0, 1.0);
-      }`;
+    void main() {
+      vec2 normalizedPosition = vertexPosition / uResolution * 2.0 - 1.0;
+      normalizedPosition.y = -normalizedPosition.y;
+      gl_Position = vec4(normalizedPosition, 0.0, 1.0);
+    }`;
   
     const vertexShader = gl.createShader(gl.VERTEX_SHADER);
     gl.shaderSource(vertexShader, vertexShaderSource);
@@ -99,6 +47,13 @@ const FishCanvas = () => {
       return;
     }
 
+    return [vertexShader, fragmentShader];
+  }
+
+  // Function that creates the program and links shaders
+  function setupProgram(gl) {
+    const [vertexShader, fragmentShader] = setupShaders(gl);
+
     // Create shader program and link shaders
     const fishProgram = gl.createProgram();
     gl.attachShader(fishProgram, vertexShader);
@@ -112,25 +67,39 @@ const FishCanvas = () => {
 
     gl.useProgram(fishProgram);
 
-    const vertexLocation = gl.getAttribLocation(fishProgram, 'vertexPosition');
-    const resolutionLocation = gl.getUniformLocation(fishProgram, 'uResolution');
-    const colorLocation = gl.getUniformLocation(fishProgram, 'fColor');
-
-    // Get screen size
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-    gl.viewport(0, 0, canvas.width, canvas.height);
-
-    // Body movement
-    fish.moveBody(true, 1);
-
     // Body buffer setup
     const bodyBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, bodyBuffer);
 
+    return fishProgram;
+  }
+
+  // Updated when screen is resized
+  function updateScreen(canvas, gl) {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    gl.viewport(0, 0, canvas.width, canvas.height);
+  }
+
+  // Function to draw the fish
+  function drawFish(gl, canvas, fish, fishProgram) {
+    // Get attributes and uniforms
+    const vertexLocation = gl.getAttribLocation(fishProgram, 'vertexPosition');
+    const resolutionLocation = gl.getUniformLocation(fishProgram, 'uResolution');
+    const colorLocation = gl.getUniformLocation(fishProgram, 'fColor');
+
+    // Set screen size
+    updateScreen(canvas, gl);
+
+    // Body movement - sets the initial fish body part locations
+    fish.moveBody(true, 1);
+
     // Enable the position attribute
     gl.enableVertexAttribArray(vertexLocation);
     gl.vertexAttribPointer(vertexLocation, 2, gl.FLOAT, false, 0, 0);
+
+    // Initial load (can translate)
+    // body circles and bottom fins
 
     function render() {
       // Get center of screen
@@ -164,7 +133,7 @@ const FishCanvas = () => {
       bottomFinVertices.push(makeEllipseVertices(
         bottomFinLocations.f.locs.l.x + canvas.width / 2, // Front left bottom fin X coord
         bottomFinLocations.f.locs.l.y + canvas.height / 2, // Front left bottom fin Y coord
-        [fish.bottomFinSizes[0], fish.bottomFinSizes[0] / 2], // Fin radiuses (making oval)
+        [fish.bottomFinSizes[0], fish.bottomFinSizes[0] / 3], // Fin radiuses (making oval)
         false, // False for circle (making oval)
         false, // False for half (making whole ellipse)
         bottomFinLocations.f.dir, // Direction that front bottom fins face
@@ -173,7 +142,7 @@ const FishCanvas = () => {
       bottomFinVertices.push(makeEllipseVertices(
         bottomFinLocations.f.locs.r.x + canvas.width / 2, // Front right bottom fin X coord
         bottomFinLocations.f.locs.r.y + canvas.height / 2,
-        [fish.bottomFinSizes[0], fish.bottomFinSizes[0] / 2],
+        [fish.bottomFinSizes[0], fish.bottomFinSizes[0] / 3],
         false,
         false,
         bottomFinLocations.f.dir,
@@ -383,18 +352,71 @@ const FishCanvas = () => {
         gl.drawArrays(gl.TRIANGLE_FAN, 0, position.length / 2);
       });
 
-
       requestAnimationFrame(render);
     }
 
     render();
   }
 
+  function makeEllipseVertices(centerX, centerY, radius, circle = true, half = false, bodyAngle = 0, phi = 0) {
+    const vertices = [centerX, centerY];
+
+    var startTheta = 0;
+    var endTheta = 2 * Math.PI;
+    if (half && phi < 0) {
+      endTheta -= Math.PI;
+    } else if (half && phi > 0) {
+      startTheta += Math.PI;
+    }
+
+    // Loop through 45 segments (number of triangles making up the circle)
+    for (let i = 0; i <= 45; i++) {
+        const theta = startTheta + (i / 45) * (half ? 1 : 2) * (endTheta - startTheta);
+
+        let x, y;
+
+        if (circle) {
+            // Generate a circle
+            x = radius[0] * Math.cos(theta);
+            y = radius[0] * Math.sin(theta);
+        } else {
+            // Generate an ellipse
+            const defaultX = radius[0] * Math.cos(theta);
+            const defaultY = radius[1] * Math.sin(theta);
+
+            // Convert bodyAngle to radians
+            const angle = ((bodyAngle + phi) % 360) * (Math.PI / 180);
+
+            // Rotate ellipse
+            y = defaultX * Math.cos(angle) - defaultY * Math.sin(angle);
+            x = defaultX * Math.sin(angle) + defaultY * Math.cos(angle);
+        }
+
+        // Translate the rotated point to the center
+        vertices.push(centerX + x, centerY + y);
+    }
+
+    return new Float32Array(vertices);
+  }
+
   useEffect(() => {
+    const canvas = canvasRef.current;
+    const gl = canvas.getContext('webgl');
+
+    if (!gl) {
+      console.error('WebGL not supported');
+      return;
+    }
+
     try {
       // const fish = new Fish([0.3, 0.7, 1.0, 1.0], 20, 1);
-      const fish = new Fish([0.7, 0.5, 0.2, 1.0], 20, 2);
-      drawFish(fish);
+      const maxWidth = window.innerWidth;
+      const maxHeight = window.innerWidth;
+
+      const fish = new Fish([0.7, 0.5, 0.2, 1.0], 15, 2, maxWidth, maxHeight);
+
+      const fishProgram = setupProgram(gl);
+      drawFish(gl, canvas, fish, fishProgram);
     }
     catch(e) {
       console.error(e);
