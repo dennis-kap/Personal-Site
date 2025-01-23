@@ -22,24 +22,25 @@ export class Fish {
       this.velocity = velocity;
 
       // Using the passed in size and predetermined proportions, sizes for all the fish parts are made
+      this.initialSize = size;
       this.size = size;
 
-      this.eyeSize = 0.2 * this.size;
+      this.bodyProportions = [0.65, 0.9, 1.0, 1.1, 1.0, 0.9, 0.8, 0.75, 0.6, 0.4, 0.3, 0.2, 0.01];
+      this.bodySizes = [];
 
-      const bodyProportions = [0.65, 0.9, 1.0, 1.1, 1.0, 0.9, 0.8, 0.75, 0.6, 0.4, 0.3, 0.2, 0.01];
-      this.bodySizes = getSizes(bodyProportions, this.size);
-
-      const bottomFinProportions = [1.5, 0.65];
-      this.bottomFinSizes = getSizes(bottomFinProportions, this.size);
+      this.bottomFinProportions = [1.5, 0.65];
+      this.bottomFinSizes = [];
       this.finIndexes = [3, 8];
       this.finRotation = 25;
       
-      this.dorsalFinSize = 1.2 * this.size;
+      this.eyeSize = 1;
+
+      this.dorsalFinSize = 1;
       this.dorsalIndex = 6;
 
-      const sizeLength = this.bodySizes.length;
+      const sizeLength = this.bodyProportions.length;
 
-      this.tailSize = 1.85 * this.size;
+      this.tailSize = 1;
       this.tailIndex = sizeLength - 1;
 
       // An initial array of positions for the fish body parts
@@ -50,6 +51,8 @@ export class Fish {
       this.direction = Array(sizeLength).fill(Math.floor(Math.random() * 360));
       this.turnChance = {dir: Math.random > 0.5 ? "cw" : "ccw", chance: 0};
       this.forcedTurnAmount = 1.1;
+
+      this.updateFishSize(this.screenWidth, this.screenHeight);
   }
 
   // Function for changing the direction the head of the fish is facing
@@ -340,21 +343,17 @@ export class Fish {
   // Called every time the window size changes to not make the fish
   // out of proportion
   updateFishSize(newWidth, newHeight) {
-    const curWidth = this.screenWidth;
-    const curHeight = this.screenHeight;
-
-    const widthChange = newWidth / curWidth;
-    const heightChange = newHeight / curHeight;
-
-    const maxChange = Math.max(widthChange, heightChange);
-
-    this.eyeSize *= maxChange;
-    this.bodySizes = getSizes(this.bodySizes, maxChange);
-    this.bottomFinSizes = getSizes(this.bottomFinSizes, maxChange);
-    this.dorsalFinSize *= maxChange;
-    this.tailSize *= maxChange;
-
     this.screenWidth = newWidth;
-    this.screenHeight = newHeight;
+    this.screenWidth = newHeight;
+
+    const newSize = this.initialSize * (this.screenWidth / 750) + (this.size * 0.5);
+    this.size = newSize;
+
+    this.bodySizes = getSizes(this.bodyProportions, newSize);
+    this.bottomFinSizes = getSizes(this.bottomFinProportions, newSize);
+
+    this.eyeSize = 0.2 * newSize;
+    this.dorsalFinSize = 1.2 * newSize;
+    this.tailSize = 1.85 * newSize;
   }
 }

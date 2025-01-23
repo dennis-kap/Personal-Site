@@ -110,7 +110,7 @@ const FishCanvas = () => {
   }
 
   // Updated when screen is resized
-  function updateScreen(canvas, gl) {
+  function updateScreen(canvas, gl, fishArray) {
     const maxWidth = window.innerWidth * SIZE_SCALAR;
     const maxHeight = window.innerHeight * SIZE_SCALAR;
     
@@ -118,6 +118,70 @@ const FishCanvas = () => {
     canvas.height = maxHeight;
 
     gl.viewport(0, 0, canvas.width, canvas.height);
+  }
+
+  // Function that creates the initial ellipse vertices
+  function initialEllipsePositions(positions, canvas) {
+    // Get initial positions to get translation by subtracting from new positions
+    const initialCirclePositions = positions.map((pos) => ({
+      x: pos.x + canvas.width / 2, // X coord
+      y: pos.y + canvas.height / 2 // Y coord
+    }));
+
+    // Generating the initial circles
+    const circleVertices = Array.from(positions.map((pos) => {
+      return makeEllipseVertices(
+        pos.x + canvas.width / 2, // X coord
+        pos.y + canvas.height / 2, // Y coord
+        [pos.size] // Size of circle
+      )
+    }));
+
+    return [initialCirclePositions, circleVertices];
+  };
+
+  // Function to get initial bottom fin  positions, direction
+  function initialBottomFinData(positions, canvas) {
+    const [initialBottomFinPositions, _] = initialEllipsePositions(positions, canvas);
+
+    const initialBottomFinDirections = Array.from(positions.map((pos) => (
+      pos.dir
+    )));
+
+    // Generating the initial circles
+    const bottomFinVertices = Array.from(positions.map((pos) => {
+      return makeEllipseVertices(
+        pos.x + canvas.width / 2, // X coord
+        pos.y + canvas.height / 2, // Y coord
+        pos.sizes, // Size of ellipse
+        false, // Not a circle
+        false, // Full ellipse
+        pos.dir, // Main direction
+        pos.angle // phi
+      )
+    }));
+
+    return [initialBottomFinPositions, initialBottomFinDirections, bottomFinVertices];
+  };
+
+  function getFishArrayData(fishArray, canvas) {
+    const fishArrayData = fishArray.map(fish => {
+      const [initialBottomFinPositions, initialBottomFinDirections, bottomFinVertices] = initialBottomFinData(fish.getBottomFins(), canvas);
+      const [initialEyePositions, eyeVertices] = initialEllipsePositions(fish.getEyes(), canvas);
+      const [initialSegmentPositions, bodyVertices] = initialEllipsePositions(fish.getBodySegments(), canvas);
+  
+      return {
+          initialBottomFinPositions,
+          initialBottomFinDirections,
+          bottomFinVertices,
+          initialEyePositions,
+          eyeVertices,
+          initialSegmentPositions,
+          bodyVertices,
+      };
+    });
+
+    return fishArrayData;
   }
 
   // Function to draw the fish
@@ -133,7 +197,6 @@ const FishCanvas = () => {
 
     const rotationLocation = gl.getUniformLocation(fishProgram, "uRotation");
     const centerLocation = gl.getUniformLocation(fishProgram, "uCenter");
-    
 
     gl.uniform1f(viewHeightLocation, VIEW_HEIGHT_ASPECT);
 
@@ -146,67 +209,7 @@ const FishCanvas = () => {
     gl.enableVertexAttribArray(vertexLocation);
     gl.vertexAttribPointer(vertexLocation, 2, gl.FLOAT, false, 0, 0);
 
-    // Function to get initial bottom fin  positions, direction
-    const initialBottomFinData = (positions) => {
-      const [initialBottomFinPositions, _] = initialEllipsePositions(positions);
-
-      const initialBottomFinDirections = Array.from(positions.map((pos) => (
-        pos.dir
-      )));
-
-      // Generating the initial circles
-      const bottomFinVertices = Array.from(positions.map((pos) => {
-        return makeEllipseVertices(
-          pos.x + canvas.width / 2, // X coord
-          pos.y + canvas.height / 2, // Y coord
-          pos.sizes, // Size of ellipse
-          false, // Not a circle
-          false, // Full ellipse
-          pos.dir, // Main direction
-          pos.angle // phi
-        )
-      }));
-
-      return [initialBottomFinPositions, initialBottomFinDirections, bottomFinVertices];
-    };
-
-    // Function that creates the initial ellipse vertices
-    const initialEllipsePositions = (positions) => {
-      // Get initial positions to get translation by subtracting from new positions
-      const initialCirclePositions = positions.map((pos) => ({
-        x: pos.x + canvas.width / 2, // X coord
-        y: pos.y + canvas.height / 2 // Y coord
-      }));
-
-      // Generating the initial circles
-      const circleVertices = Array.from(positions.map((pos) => {
-        return makeEllipseVertices(
-          pos.x + canvas.width / 2, // X coord
-          pos.y + canvas.height / 2, // Y coord
-          [pos.size] // Size of circle
-        )
-      }));
-
-      return [initialCirclePositions, circleVertices];
-    };
-
-    // Creating all the translatable segments
-    // These are done before render because they are translated, not re-rendered
-    const fishArrayData = fishArray.map(fish => {
-      const [initialBottomFinPositions, initialBottomFinDirections, bottomFinVertices] = initialBottomFinData(fish.getBottomFins());
-      const [initialEyePositions, eyeVertices] = initialEllipsePositions(fish.getEyes());
-      const [initialSegmentPositions, bodyVertices] = initialEllipsePositions(fish.getBodySegments());
-  
-      return {
-          initialBottomFinPositions,
-          initialBottomFinDirections,
-          bottomFinVertices,
-          initialEyePositions,
-          eyeVertices,
-          initialSegmentPositions,
-          bodyVertices,
-      };
-    });
+    var fishArrayData = getFishArrayData(fishArray, canvas);
 
     // Drawing the parts that can be transformed (translated/rotated)
     const drawPart = (vertices, curData, prevLoc, prevDir, color, centerX, centerY) => {
@@ -432,7 +435,6 @@ const FishCanvas = () => {
     }
 
     try {
-      // const fish = new Fish([0.3, 0.7, 1.0, 1.0], 20, 1);
       const maxWidth = window.innerWidth * SIZE_SCALAR;
       const maxHeight = window.innerHeight * SIZE_SCALAR;
 
@@ -441,16 +443,18 @@ const FishCanvas = () => {
 
       const fish1 = new Fish([0.7, 0.5, 0.2, 1.0], 3, 0.6, maxWidth, maxHeight);
       const fish2 = new Fish([0.7, 0.5, 0.7, 1.0], 5, 0.5, maxWidth, maxHeight);
+      const fish3 = new Fish([0.7, 0.8, 0.2, 1.0], 3, 0.8, maxWidth, maxHeight);
+      const fishArray = [fish1, fish2, fish3];
 
       const fishProgram = setupProgram(gl);
-      drawFish(gl, canvas, [fish1, fish2], fishProgram);
+      drawFish(gl, canvas, fishArray, fishProgram);
 
-      updateScreen(canvas, gl);
+      updateScreen(canvas, gl, fishArray);
 
-      window.addEventListener("resize", () => updateScreen(canvas, gl));
+      window.addEventListener("resize", () => updateScreen(canvas, gl, fishArray));
 
       return () => {
-        window.removeEventListener("resize", () => updateScreen(canvas, gl));
+        window.removeEventListener("resize", () => updateScreen(canvas, gl, fishArray));
       };
     }
     catch(e) {
