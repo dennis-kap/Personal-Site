@@ -1,8 +1,12 @@
 import React, { useRef, useEffect } from 'react';
 import { Fish } from './Fish.js';
 
-const SIZE_SCALAR = 0.5;
+const SIZE_SCALAR = 0.25;
 const CANVAS_COLOR = [0.0, 0.15, 0.4, 0.7];
+
+// The viewheight in CSS is set to 150
+// To compensate, the aspect ratio needs to be modified by 1.5
+const VIEW_HEIGHT_ASPECT = 1.5;
 
 const FishCanvas = () => {
   // Setting up canvas
@@ -15,6 +19,7 @@ const FishCanvas = () => {
 
       attribute vec2 vertexPosition;
       uniform vec2 uResolution;
+      uniform float viewHeightAspect;
 
       uniform vec2 uTranslation;
 
@@ -22,8 +27,10 @@ const FishCanvas = () => {
       uniform float uRotation;
 
       void main() {
+        // Translate position to origin
         vec2 translatedToOrigin = vertexPosition - uCenter;
 
+        // Rotate around the origin
         float cosTheta = cos(uRotation);
         float sinTheta = sin(uRotation);
         vec2 rotatedAtOrigin = vec2(
@@ -31,12 +38,19 @@ const FishCanvas = () => {
             sinTheta * translatedToOrigin.x + cosTheta * translatedToOrigin.y
         );
 
+        // Translate back to position
         vec2 translatedBack = rotatedAtOrigin + uCenter;
 
+        // Apply translation
         vec2 finalPosition = translatedBack + uTranslation;
 
-        vec2 normalizedPosition = finalPosition / uResolution * 2.0 - 1.0;
-        gl_Position = vec4(normalizedPosition, 0.0, 1.0);
+        // Normalize the position and maintain aspect ratio
+        vec2 normalizedPosition = (finalPosition / uResolution) * 2.0 - 1.0;
+
+        // Compensating for CSS viewheight
+        vec2 aspectCorrectedPosition = vec2(normalizedPosition.x * viewHeightAspect, normalizedPosition.y);
+
+        gl_Position = vec4(aspectCorrectedPosition, 0.0, 1.0);
       }
     `;
   
@@ -104,8 +118,6 @@ const FishCanvas = () => {
     canvas.height = maxHeight;
 
     gl.viewport(0, 0, canvas.width, canvas.height);
-
-
   }
 
   // Function to draw the fish
@@ -113,6 +125,8 @@ const FishCanvas = () => {
     // Get attributes and uniforms
     const vertexLocation = gl.getAttribLocation(fishProgram, 'vertexPosition');
     const resolutionLocation = gl.getUniformLocation(fishProgram, 'uResolution');
+    const viewHeightLocation = gl.getUniformLocation(fishProgram, 'viewHeightAspect');
+
     const colorLocation = gl.getUniformLocation(fishProgram, 'fColor');
 
     const translationLocation = gl.getUniformLocation(fishProgram, "uTranslation");
@@ -121,8 +135,10 @@ const FishCanvas = () => {
     const centerLocation = gl.getUniformLocation(fishProgram, "uCenter");
     
 
+    gl.uniform1f(viewHeightLocation, VIEW_HEIGHT_ASPECT);
+
     // Body movement - sets the initial fish body part locations
-    fish.moveBody(true, 1);
+    fish.moveBody(true, 1); // True for initial setup
 
     // Enable the position attribute
     gl.enableVertexAttribArray(vertexLocation);
@@ -133,7 +149,6 @@ const FishCanvas = () => {
       const [initialBottomFinPositions, _] = initialEllipsePositions(positions);
 
       const initialBottomFinDirections = Array.from(positions.map((pos) => (
-        // (pos.dir + pos.angle) % 360
         pos.dir
       )));
 
@@ -143,10 +158,10 @@ const FishCanvas = () => {
           pos.x + canvas.width / 2, // X coord
           pos.y + canvas.height / 2, // Y coord
           pos.sizes, // Size of ellipse
-          false,
-          false,
-          pos.dir,
-          pos.angle
+          false, // Not a circle
+          false, // Full ellipse
+          pos.dir, // Main direction
+          pos.angle // phi
         )
       }));
 
@@ -173,51 +188,6 @@ const FishCanvas = () => {
       return [initialCirclePositions, circleVertices];
     };
 
-
-    // ##################################################################################################################################################
-
-    // Generate bottom fins
-    // const bottomFinVertices = [];
-    // bottomFinVertices.push(makeEllipseVertices(
-    //   bottomFinLocations.f.locs.l.x + canvas.width / 2, // Front left bottom fin X coord
-    //   bottomFinLocations.f.locs.l.y + canvas.height / 2, // Front left bottom fin Y coord
-    //   [fish.bottomFinSizes[0], fish.bottomFinSizes[0] / 3], // Fin radiuses (making oval)
-    //   false, // False for circle (making oval)
-    //   false, // False for half (making whole ellipse)
-    //   bottomFinLocations.f.dir, // Direction that front bottom fins face
-    //   fish.finRotation // Inward rotation of front left bottom fin
-    // ));
-    // bottomFinVertices.push(makeEllipseVertices(
-    //   bottomFinLocations.f.locs.r.x + canvas.width / 2, // Front right bottom fin X coord
-    //   bottomFinLocations.f.locs.r.y + canvas.height / 2,
-    //   [fish.bottomFinSizes[0], fish.bottomFinSizes[0] / 3],
-    //   false,
-    //   false,
-    //   bottomFinLocations.f.dir,
-    //   -fish.finRotation
-    // ));
-    // bottomFinVertices.push(makeEllipseVertices(
-    //   bottomFinLocations.b.locs.l.x + canvas.width / 2, // Back left bottom fin X coord
-    //   bottomFinLocations.b.locs.l.y + canvas.height / 2,
-    //   [fish.bottomFinSizes[1], fish.bottomFinSizes[1] / 2],
-    //   false,
-    //   false,
-    //   bottomFinLocations.b.dir,
-    //   fish.finRotation
-    // ));
-    // bottomFinVertices.push(makeEllipseVertices(
-    //   bottomFinLocations.b.locs.r.x + canvas.width / 2, // Back right bottom fin X coord
-    //   bottomFinLocations.b.locs.r.y + canvas.height / 2,
-    //   [fish.bottomFinSizes[1], fish.bottomFinSizes[1] / 2],
-    //   false,
-    //   false,
-    //   bottomFinLocations.b.dir,
-    //   -fish.finRotation
-    // ));
-
-    // ##################################################################################################################################################
-
-
     // Creating all the translatable segments
     // These are done before render because they are translated, not re-rendered
     const [initialBottomFinPositions, initialBottomFinDirections, bottomFinVertices] = initialBottomFinData(fish.getBottomFins());
@@ -237,13 +207,11 @@ const FishCanvas = () => {
       const eyeLocations = fish.getEyes();
       const bodySegmentLocations = fish.getBodySegments();
       const bodySideLocations = fish.getBodyLines();
-      const dorsalFinLocation = fish.getDorsalOrTail(true);
-      const tailLocation = fish.getDorsalOrTail(false);
+      const dorsalAndTailLocations = fish.getDorsalAndTail();
+      // const tailLocation = fish.getDorsalOrTail(false);
 
       gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
       gl.clearColor(...CANVAS_COLOR);
-
-      
 
       // Set universal values used for generation
 
@@ -260,7 +228,7 @@ const FishCanvas = () => {
         gl.uniform2f(centerLocation, 0, 0);
       }
 
-      // Rendering the bottom fins
+      // !!!!! Rendering the bottom fins
       const renderBottomFins = () => {
         bottomFinVertices.forEach((position, index) => {
           // Upload vertex data
@@ -269,8 +237,8 @@ const FishCanvas = () => {
           gl.uniform4fv(colorLocation, fish.finColor);
         
           // Set the translation for the current fin
-          const xTranslation = bottomFinLocations[index].x - initialBottomFinPositions[index].x + canvas.width / 2;
-          const yTranslation = bottomFinLocations[index].y - initialBottomFinPositions[index].y + canvas.height / 2;
+          const xTranslation = bottomFinLocations[index].x - initialBottomFinPositions[index].x + centerX;
+          const yTranslation = bottomFinLocations[index].y - initialBottomFinPositions[index].y + centerY;
           gl.uniform2f(translationLocation, xTranslation, yTranslation);
 
           const finCenter = [initialBottomFinPositions[index].x, initialBottomFinPositions[index].y];
@@ -286,7 +254,7 @@ const FishCanvas = () => {
         });
       };
       
-      // Render eyes
+      // !!!!! Render eyes
       const renderEyes = () => {
         eyeVertices.forEach((position, index) => {
           // Update buffer data for each eye
@@ -295,8 +263,8 @@ const FishCanvas = () => {
           gl.uniform4fv(colorLocation, fish.eyeColor);
   
           // Set the translation for the current eye
-          const xTranslation = eyeLocations[index].x - initialEyePositions[index].x + canvas.width / 2;
-          const yTranslation = eyeLocations[index].y - initialEyePositions[index].y + canvas.height / 2;
+          const xTranslation = eyeLocations[index].x - initialEyePositions[index].x + centerX;
+          const yTranslation = eyeLocations[index].y - initialEyePositions[index].y + centerY;
           gl.uniform2f(translationLocation, xTranslation, yTranslation);
   
           // Draw eye circles
@@ -304,7 +272,7 @@ const FishCanvas = () => {
         });
       };
 
-      // Render body circles (make up the form of the fish)
+      // !!!!! Render body circles (make up the form of the fish)
       const renderBodySegments = () => {
         bodyVertices.forEach((position, index) => {
           // Update buffer data for each body part
@@ -313,8 +281,8 @@ const FishCanvas = () => {
           gl.uniform4fv(colorLocation, fish.color);
   
           // Set the translation for the current body segment
-          const xTranslation = bodySegmentLocations[index].x - initialSegmentPositions[index].x + canvas.width / 2;
-          const yTranslation = bodySegmentLocations[index].y - initialSegmentPositions[index].y + canvas.height / 2;
+          const xTranslation = bodySegmentLocations[index].x - initialSegmentPositions[index].x + centerX;
+          const yTranslation = bodySegmentLocations[index].y - initialSegmentPositions[index].y + centerY;
           gl.uniform2f(translationLocation, xTranslation, yTranslation);
   
           // Draw body circles
@@ -374,59 +342,19 @@ const FishCanvas = () => {
         // Generate dorsal fin
         const dorsalAndTailVertices = [];
 
-
-// THIS CAN BE SIMPLIFIED
-
-
-
-
-        // Dorsal fin portion that always remains. Consider it the base of the fin
-        dorsalAndTailVertices.push(makeEllipseVertices(
-          dorsalFinLocation.loc.x  + canvas.width / 2,
-          dorsalFinLocation.loc.y + canvas.height / 2,
-          [fish.dorsalFinSize, fish.dorsalFinSize / 10],
-          false,
-          false,
-          dorsalFinLocation.dir,
-          -dorsalFinLocation.angle
-        ));
-
-        // Dorsal fin portion that widens on turns. Like the top of the fin slanting a bit
-        const dorsalWidth = (fish.dorsalFinSize / (100/Math.abs(dorsalFinLocation.angle))) + fish.dorsalFinSize / 10;
-        dorsalAndTailVertices.push(makeEllipseVertices(
-          dorsalFinLocation.loc.x + canvas.width / 2,
-          dorsalFinLocation.loc.y + canvas.height / 2,
-          [fish.dorsalFinSize, dorsalWidth],
-          false,
-          true,
-          dorsalFinLocation.dir,
-          -dorsalFinLocation.angle
-        ));
-
-        // Generate tail
-        dorsalAndTailVertices.push(makeEllipseVertices(
-          tailLocation.loc.x + canvas.width / 2,
-          tailLocation.loc.y + canvas.height / 2,
-          [fish.tailSize, fish.tailSize / 10],
-          false,
-          false,
-          tailLocation.dir,
-          -tailLocation.angle
-        ))
-
-        const tailWidth = (fish.tailSize / (75/Math.abs(tailLocation.angle))) + fish.tailSize / 15;
-        dorsalAndTailVertices.push(makeEllipseVertices(
-          tailLocation.loc.x + canvas.width / 2,
-          tailLocation.loc.y + canvas.height / 2,
-          [fish.tailSize, tailWidth],
-          false,
-          true,
-          tailLocation.dir,
-          -tailLocation.angle
-        ))
+        dorsalAndTailLocations.forEach((fin) => {
+          dorsalAndTailVertices.push(makeEllipseVertices(
+            fin.loc.x  + canvas.width / 2,
+            fin.loc.y + canvas.height / 2,
+            [fin.length, fin.width],
+            false,
+            fin.circle,
+            fin.dir,
+            fin.angle
+          ));
+        });
 
         dorsalAndTailVertices.forEach((position) => {
-
           // Update buffer data for each body part
           gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(position), gl.STATIC_DRAW);
 
@@ -515,7 +443,10 @@ const FishCanvas = () => {
       const maxWidth = window.innerWidth * SIZE_SCALAR;
       const maxHeight = window.innerHeight * SIZE_SCALAR;
 
-      const fish = new Fish([0.7, 0.5, 0.2, 1.0], 10, 1, maxWidth, maxHeight);
+      canvas.width = maxWidth;
+      canvas.height = maxHeight;
+
+      const fish = new Fish([0.7, 0.5, 0.2, 1.0], 5, 0.5, maxWidth, maxHeight);
 
       const fishProgram = setupProgram(gl);
       drawFish(gl, canvas, fish, fishProgram);

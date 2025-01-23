@@ -43,11 +43,13 @@ export class Fish {
       this.tailIndex = sizeLength - 1;
 
       // An initial array of positions for the fish body parts
+      const initialXY = {x: randomSign() * (Math.random() * (maxWidth / 4)), y: (Math.random() * (maxHeight / 10))};
       this.positions = Array(sizeLength).fill(null).map(() => 
-        ({x: randomSign() * (Math.random() * (maxWidth / 4)), y: (Math.random() * (maxHeight / 10))}));
+        ({...initialXY}));
 
       this.direction = Array(sizeLength).fill(Math.floor(Math.random() * 360));
       this.turnChance = {dir: Math.random > 0.5 ? "cw" : "ccw", chance: 0};
+      this.forcedTurnAmount = 1.1;
   }
 
   // Function for changing the direction the head of the fish is facing
@@ -62,7 +64,6 @@ export class Fish {
   // This is normally random, but also is forced when near the edge of the canvas
   possiblyChangeDirection(maxW, maxH) {
     // Amount to turn when forced to turn
-    const forcedTurnAmount = 1.1;
     const distanceFromWall = this.size * 2;
 
     // Current position of the front of the fish
@@ -102,7 +103,7 @@ export class Fish {
 
     // Forced change in direction due to being too close to or past an edge
     if (needToTurnAround) {
-      this.changeDirection(forcedTurnAmount);
+      this.changeDirection(this.forcedTurnAmount);
     }
 
     // Regular direction change (randomized)
@@ -277,42 +278,62 @@ export class Fish {
       size: this.eyeSize}]
   }
 
-  // Getting the location of the dorsal fin or tail
-  getDorsalOrTail(dorsal) {
-    // Get index based on if the dorsal is needed or the tail
-    const index = dorsal ? this.dorsalIndex : this.tailIndex;
-    const size = dorsal ? this.dorsalFinSize : this.tailSize;
+  // Getting the locations of the dorsal fin and tail
+  getDorsalAndTail() {
 
-    // Values from front and back segments that will decide location and direction
-    // of the fin/tail
-    const frontLoc = this.positions[index - 1];
-    const curLoc = this.positions[index];
+    const getDorsalWidth = (angle) => (this.dorsalFinSize / (100/Math.abs(angle))) + this.dorsalFinSize / 10;
+    const getTailWidth = (angle) => (this.tailSize / (75/Math.abs(angle))) + this.tailSize / 15;
+    const finInfo = [
+      {index: this.dorsalIndex, length: this.dorsalFinSize, width: getDorsalWidth},
+      {index: this.tailIndex, length: this.tailSize, width: getTailWidth}
+    ]
 
-    // The location of the dorsal/tail calculated
-    const newLoc = {x: (frontLoc.x + curLoc.x) / 2, y: (frontLoc.y + curLoc.y) / 2}
+    const finData = []
+    finInfo.forEach((data) => {
+      // Values from front and back segments that will decide location and direction
+      // of the fin/tail
+      const frontLoc = this.positions[data.index - 1];
+      const curLoc = this.positions[data.index];
 
-    // Direction that the fin/tail should face
-    const dirToPrev = Math.atan2(frontLoc.x - curLoc.x, frontLoc.y - curLoc.y) * (180 / Math.PI);
+      // The location of the dorsal/tail calculated
+      const newLoc = {x: (frontLoc.x + curLoc.x) / 2, y: (frontLoc.y + curLoc.y) / 2}
 
-    // Getting difference in direction angles (to bend the fin)
-    const frontDir = this.direction[index - 1];
-    const curDir = this.direction[index];
-    
-    var dirDiff = curDir - frontDir;
-    
-    // Normalizing the difference (to account for differences from 0 to 360)
-    if (dirDiff > 180) {
-      dirDiff -= 360;
-    } else if (dirDiff <= -180) {
-      dirDiff += 360;
-    }
+      // Direction that the fin/tail should face
+      const dirToPrev = Math.atan2(frontLoc.x - curLoc.x, frontLoc.y - curLoc.y) * (180 / Math.PI);
+
+      // Getting difference in direction angles (to bend the fin)
+      const frontDir = this.direction[data.index - 1];
+      const curDir = this.direction[data.index];
+      
+      var dirDiff = curDir - frontDir;
+      
+      // Normalizing the difference (to account for differences from 0 to 360)
+      if (dirDiff > 180) {
+        dirDiff -= 360;
+      } else if (dirDiff <= -180) {
+        dirDiff += 360;
+      }
+
+      finData.push({
+        dir: dirToPrev,
+        angle: -dirDiff,
+        loc: {...newLoc},
+        length: data.length,
+        width: data.length / 10,
+        circle: false
+      });
+      finData.push({
+        dir: dirToPrev,
+        angle: -dirDiff,
+        loc: {...newLoc},
+        length: data.length,
+        width: data.width(-dirDiff),
+        circle: true
+      });
+
+    });
   
-    return {
-      dir: dirToPrev,
-      angle: dirDiff,
-      loc: {...newLoc},
-      size: size
-    };
+    return finData;
   }
 
   // Function that updates the fish sizes based on the screen size.
