@@ -2,7 +2,7 @@ import React, { useRef, useEffect } from 'react';
 import { Fish } from './Fish.js';
 
 const SIZE_SCALAR = 0.25;
-const CANVAS_COLOR = [0.0, 0.15, 0.4, 0.6];
+const CANVAS_COLOR = [0.0, 0.15, 0.4, 0.7];
 
 // The viewheight in CSS is set to 150
 // To compensate, the aspect ratio needs to be modified by 1.5
@@ -166,9 +166,9 @@ const FishCanvas = () => {
 
   function getFishArrayData(fishArray, canvas) {
     const fishArrayData = fishArray.map(fish => {
-      const [initialBottomFinPositions, initialBottomFinDirections, bottomFinVertices] = initialBottomFinData(fish.bottomFinLocations, canvas);
-      const [initialEyePositions, eyeVertices] = initialEllipsePositions(fish.eyeLocations, canvas);
-      const [initialSegmentPositions, bodyVertices] = initialEllipsePositions(fish.bodySegmentLocations, canvas);
+      const [initialBottomFinPositions, initialBottomFinDirections, bottomFinVertices] = initialBottomFinData(fish.getBottomFins(), canvas);
+      const [initialEyePositions, eyeVertices] = initialEllipsePositions(fish.getEyes(), canvas);
+      const [initialSegmentPositions, bodyVertices] = initialEllipsePositions(fish.getBodySegments(), canvas);
   
       return {
           initialBottomFinPositions,
@@ -203,14 +203,13 @@ const FishCanvas = () => {
     // Body movement - sets the initial fish body part locations
     fishArray.forEach((fish) => {
       fish.moveBody(true, 1); // True for initial setup
-      fish.updateVertices();
     });
 
     // Enable the position attribute
     gl.enableVertexAttribArray(vertexLocation);
     gl.vertexAttribPointer(vertexLocation, 2, gl.FLOAT, false, 0, 0);
 
-    const fishArrayData = getFishArrayData(fishArray, canvas);
+    var fishArrayData = getFishArrayData(fishArray, canvas);
 
     // Drawing the parts that can be transformed (translated/rotated)
     const drawPart = (vertices, curData, prevLoc, prevDir, color, centerX, centerY) => {
@@ -240,6 +239,8 @@ const FishCanvas = () => {
       });
     }
 
+    // Variable for changing body lines, but to avoid making new arrays each render
+    var bodyLineVertices = [];
     function render() {
       // Get center of screen
       const centerX = canvas.width / 2;
@@ -268,23 +269,16 @@ const FishCanvas = () => {
         fish.possiblyChangeDirection(canvas.width, canvas.height);
         fish.moveHead();
 
-        fish.updateVertices();
+        const bottomFinLocations = fish.getBottomFins();
+        const eyeLocations = fish.getEyes();
+        const bodySegmentLocations = fish.getBodySegments();
+        const bodySideLocations = fish.getBodyLines();
+        const dorsalAndTailLocations = fish.getDorsalAndTail();
 
-        const bottomFinLocations = fish.bottomFinLocations;
-        const eyeLocations = fish.eyeLocations;
-        const bodySegmentLocations = fish.bodySegmentLocations;
-        const bodySideLocations = fish.bodySideLocations;
-        const dorsalAndTailLocations = fish.dorsalAndTailLocations;
-
-        // !!!!! Rendering the body lines that make the sides of the fish
-        const renderBodyLines = () => {
+         // !!!!! Rendering the body lines that make the sides of the fish
+         const renderBodyLines = () => {
           // Generate lines in body
-          const bodyLineVertices = [];
-          // Indices used to show the order of connecting points to make a quadrilateral
-          const bodyIndices = [
-            0, 1, 2,
-            0, 2, 3
-          ];
+          bodyLineVertices = [];
 
           // Drawing the quadrilaterals
           for (var side = 0; side < bodySideLocations.length - 1; side++) {
@@ -292,24 +286,21 @@ const FishCanvas = () => {
             const {l: l2, r: r2} = bodySideLocations[side + 1];
 
             bodyLineVertices.push([
-              l1.x + centerX, l1.y + centerY,
+              l1.x + centerX, l1.y + centerY, // Triangle 1
               r1.x + centerX, r1.y + centerY,
               r2.x + centerX, r2.y + centerY,
-              l2.x + centerX, l2.y + centerY,
+          
+              l1.x + centerX, l1.y + centerY, // Triangle 2
+              r2.x + centerX, r2.y + centerY,
+              l2.x + centerX, l2.y + centerY
             ]);
-
           }
 
           bodyLineVertices.forEach((vertices) => {
             // Bind body line vertices
             const bodyLineBuffer = gl.createBuffer();
             gl.bindBuffer(gl.ARRAY_BUFFER, bodyLineBuffer);
-            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
-
-            // Bind body indices
-            const bodyIndexBuffer = gl.createBuffer();
-            gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, bodyIndexBuffer);
-            gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(bodyIndices), gl.STATIC_DRAW);
+            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STREAM_DRAW);
 
             // Set attributes and uniforms
             gl.enableVertexAttribArray(vertexLocation);
@@ -319,7 +310,7 @@ const FishCanvas = () => {
             gl.uniform4fv(colorLocation, fish.color);
 
             // Draw body lines using indices
-            gl.drawElements(gl.TRIANGLES, bodyIndices.length, gl.UNSIGNED_SHORT, 0);
+            gl.drawArrays(gl.TRIANGLES, 0, bodyLineVertices.length / 2);
           });
         };
 
@@ -446,7 +437,7 @@ const FishCanvas = () => {
 
       const fish1 = new Fish([0.7, 0.5, 0.2, 1.0], 3, 0.6, maxWidth, maxHeight);
       const fish2 = new Fish([0.7, 0.5, 0.7, 1.0], 5, 0.5, maxWidth, maxHeight);
-      const fish3 = new Fish([0.6, 0.6, 0.8, 1.0], 2.5, 0.7, maxWidth, maxHeight);
+      const fish3 = new Fish([0.7, 0.8, 0.2, 1.0], 3, 0.8, maxWidth, maxHeight);
       const fishArray = [fish1, fish2, fish3];
 
       const fishProgram = setupProgram(gl);

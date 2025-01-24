@@ -17,45 +17,26 @@ const ScrollIcons = () => {
         return () => observer.disconnect();
     }, []);
 
+    const iconData = [
+        { alt: 'python', src: '/icons/python.png', label: 'Python' },
+        { alt: 'javascript', src: '/icons/javascript.png', label: 'JavaScript' },
+        { alt: 'java', src: '/icons/java.png', label: 'Java' },
+        { alt: 'sql', src: '/icons/sql.png', label: 'SQL' },
+        { alt: 'html', src: '/icons/html.png', label: 'HTML' },
+        { alt: 'react', src: '/icons/react.png', label: 'React' },
+    ];
+
     return (
         <div>
             <Row className = "icons">
-                <Col xs={6} sm={6} md={4}>
-                    <div className = "icon hidden">
-                        <img alt="python" src={`${process.env.PUBLIC_URL}/icons/python.png`}/>
-                        Python
-                    </div>
-                </Col>
-                <Col xs={6} sm={6} md={4}>
-                    <div className = "icon hidden">
-                        <img alt="javascript" src={`${process.env.PUBLIC_URL}/icons/javascript.png`}/>
-                        JavaScript
-                    </div>
-                </Col>
-                <Col xs={6} sm={6} md={4}>
-                    <div className = "icon hidden">
-                        <img alt="java" src={`${process.env.PUBLIC_URL}/icons/java.png`}/>
-                        Java
-                    </div>
-                </Col>
-                <Col xs={6} sm={6} md={4}>
-                    <div className = "icon hidden">
-                        <img alt="sql" src={`${process.env.PUBLIC_URL}/icons/sql.png`}/>
-                        SQL
-                    </div>
-                </Col>
-                <Col xs={6} sm={6} md={4}>
-                    <div className = "icon hidden">
-                        <img alt="html" src={`${process.env.PUBLIC_URL}/icons/html.png`}/>
-                        HTML
-                    </div>
-                </Col>
-                <Col xs={6} sm={6} md={4}>
-                    <div className = "icon hidden">
-                        <img alt="react" src={`${process.env.PUBLIC_URL}/icons/react.png`}/>
-                        React
-                    </div>
-                </Col>
+                {iconData.map((icon, index) => (
+                    <Col key={index} xs={6} sm={4} md={3}>
+                        <div className="icon hidden">
+                            <img alt={icon.alt} src={`${process.env.PUBLIC_URL}${icon.src}`} />
+                            {icon.label}
+                        </div>
+                    </Col>
+                ))}
             </Row>
         </div>
         // <div></div>
