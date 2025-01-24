@@ -2,7 +2,7 @@ import React, { useRef, useEffect } from 'react';
 import { Fish } from './Fish.js';
 
 const SIZE_SCALAR = 0.25;
-const CANVAS_COLOR = [0.0, 0.15, 0.4, 0.7];
+const CANVAS_COLOR = [0.0, 0.15, 0.4, 0.6];
 
 // The viewheight in CSS is set to 150
 // To compensate, the aspect ratio needs to be modified by 1.5
@@ -166,9 +166,9 @@ const FishCanvas = () => {
 
   function getFishArrayData(fishArray, canvas) {
     const fishArrayData = fishArray.map(fish => {
-      const [initialBottomFinPositions, initialBottomFinDirections, bottomFinVertices] = initialBottomFinData(fish.getBottomFins(), canvas);
-      const [initialEyePositions, eyeVertices] = initialEllipsePositions(fish.getEyes(), canvas);
-      const [initialSegmentPositions, bodyVertices] = initialEllipsePositions(fish.getBodySegments(), canvas);
+      const [initialBottomFinPositions, initialBottomFinDirections, bottomFinVertices] = initialBottomFinData(fish.bottomFinLocations, canvas);
+      const [initialEyePositions, eyeVertices] = initialEllipsePositions(fish.eyeLocations, canvas);
+      const [initialSegmentPositions, bodyVertices] = initialEllipsePositions(fish.bodySegmentLocations, canvas);
   
       return {
           initialBottomFinPositions,
@@ -203,13 +203,14 @@ const FishCanvas = () => {
     // Body movement - sets the initial fish body part locations
     fishArray.forEach((fish) => {
       fish.moveBody(true, 1); // True for initial setup
+      fish.updateVertices();
     });
 
     // Enable the position attribute
     gl.enableVertexAttribArray(vertexLocation);
     gl.vertexAttribPointer(vertexLocation, 2, gl.FLOAT, false, 0, 0);
 
-    var fishArrayData = getFishArrayData(fishArray, canvas);
+    const fishArrayData = getFishArrayData(fishArray, canvas);
 
     // Drawing the parts that can be transformed (translated/rotated)
     const drawPart = (vertices, curData, prevLoc, prevDir, color, centerX, centerY) => {
@@ -267,11 +268,13 @@ const FishCanvas = () => {
         fish.possiblyChangeDirection(canvas.width, canvas.height);
         fish.moveHead();
 
-        const bottomFinLocations = fish.getBottomFins();
-        const eyeLocations = fish.getEyes();
-        const bodySegmentLocations = fish.getBodySegments();
-        const bodySideLocations = fish.getBodyLines();
-        const dorsalAndTailLocations = fish.getDorsalAndTail();
+        fish.updateVertices();
+
+        const bottomFinLocations = fish.bottomFinLocations;
+        const eyeLocations = fish.eyeLocations;
+        const bodySegmentLocations = fish.bodySegmentLocations;
+        const bodySideLocations = fish.bodySideLocations;
+        const dorsalAndTailLocations = fish.dorsalAndTailLocations;
 
         // !!!!! Rendering the body lines that make the sides of the fish
         const renderBodyLines = () => {
@@ -443,7 +446,7 @@ const FishCanvas = () => {
 
       const fish1 = new Fish([0.7, 0.5, 0.2, 1.0], 3, 0.6, maxWidth, maxHeight);
       const fish2 = new Fish([0.7, 0.5, 0.7, 1.0], 5, 0.5, maxWidth, maxHeight);
-      const fish3 = new Fish([0.7, 0.8, 0.2, 1.0], 3, 0.8, maxWidth, maxHeight);
+      const fish3 = new Fish([0.6, 0.6, 0.8, 1.0], 2.5, 0.7, maxWidth, maxHeight);
       const fishArray = [fish1, fish2, fish3];
 
       const fishProgram = setupProgram(gl);

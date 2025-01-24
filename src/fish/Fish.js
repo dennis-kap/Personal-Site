@@ -49,10 +49,18 @@ export class Fish {
         ({...initialXY}));
 
       this.direction = Array(sizeLength).fill(Math.floor(Math.random() * 360));
+      // this.direction = Array(sizeLength).fill(180);
       this.turnChance = {dir: Math.random > 0.5 ? "cw" : "ccw", chance: 0};
       this.forcedTurnAmount = 1.1;
 
       this.updateFishSize(this.screenWidth, this.screenHeight);
+
+      // Locations of vertices
+      this.bottomFinLocations = [];
+      this.eyeLocations = [];
+      this.bodySegmentLocations = [];
+      this.bodySideLocations = [];
+      this.dorsalAndTailLocations = [];
   }
 
   // Function for changing the direction the head of the fish is facing
@@ -99,8 +107,8 @@ export class Fish {
     if (curX > maxW / 2 - distanceFromWall || curX < -maxW / 2 + distanceFromWall) {
       isDirCorrect(this.direction[0], curX > 0 ? 90 : 270);
       outside = true;
-    } else if (curY > maxH / 2 - distanceFromWall || curY < distanceFromWall * 2) {   
-      isDirCorrect(this.direction[0], curY > distanceFromWall * 2 ? 0 : 180);
+    } else if (curY > maxH / 2 - distanceFromWall || curY < distanceFromWall * 5) {   
+      isDirCorrect(this.direction[0], curY > distanceFromWall * 5 ? 0 : 180);
       outside = true;
     }
 
@@ -192,7 +200,7 @@ export class Fish {
       segments.push({x: position.x, y: position.y, size: this.bodySizes[index]});
     });
 
-    return segments;
+    this.bodySegmentLocations = segments;
   }
 
   // Get the left and right of the circle
@@ -225,7 +233,7 @@ export class Fish {
       sideLocations.push(this.getPartSides(index));
     });
 
-    return sideLocations;
+    this.bodySideLocations = sideLocations;
   }
 
   // Getting the location of the bottom fins of the fish
@@ -240,7 +248,7 @@ export class Fish {
     const frontSides = this.getPartSides(this.finIndexes[0]);
     const backSides = this.getPartSides(this.finIndexes[1]);
   
-    return [
+    this.bottomFinLocations = [
       {dir: fDir, ...frontSides.l, angle: this.finRotation,
         sizes: [this.bottomFinSizes[0], this.bottomFinSizes[0] / 3]},
       {dir: fDir, ...frontSides.r, angle: -this.finRotation,
@@ -271,7 +279,7 @@ export class Fish {
     const [lVecX, lVecY] = this.calculateVectorAmounts(lAngle);
     const [rVecX, rVecY] = this.calculateVectorAmounts(rAngle);
   
-    return [
+    this.eyeLocations = [
       {x: loc.x + forwardX * forwardOffset + lVecX * this.size * eyeOffset,
       y: loc.y + forwardY * forwardOffset + lVecY * this.size * eyeOffset,
       size: this.eyeSize},
@@ -336,7 +344,7 @@ export class Fish {
 
     });
   
-    return finData;
+    this.dorsalAndTailLocations = finData;
   }
 
   // Function that updates the fish sizes based on the screen size.
@@ -355,5 +363,13 @@ export class Fish {
     this.eyeSize = 0.2 * newSize;
     this.dorsalFinSize = 1.2 * newSize;
     this.tailSize = 1.85 * newSize;
+  }
+
+  updateVertices() {
+    this.getBottomFins();
+    this.getEyes();
+    this.getBodySegments();
+    this.getBodyLines();
+    this.getDorsalAndTail();
   }
 }
