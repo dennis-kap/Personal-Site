@@ -99,8 +99,8 @@ export class Fish {
     if (curX > maxW / 2 - distanceFromWall || curX < -maxW / 2 + distanceFromWall) {
       isDirCorrect(this.direction[0], curX > 0 ? 90 : 270);
       outside = true;
-    } else if (curY > maxH / 2 - distanceFromWall || curY < distanceFromWall * 2) {   
-      isDirCorrect(this.direction[0], curY > distanceFromWall * 2 ? 0 : 180);
+    } else if (curY > maxH / 2 - distanceFromWall || curY < distanceFromWall * 5) {   
+      isDirCorrect(this.direction[0], curY > distanceFromWall * 5 ? 0 : 180);
       outside = true;
     }
 
