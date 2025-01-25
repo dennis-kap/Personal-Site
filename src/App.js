@@ -47,9 +47,9 @@ function App() {
 
       <div class="content-wrapper">
         <header class="category-header redirects-header">PROJECTS AND SOCIALS</header>
-        <div>
+        {/* <div>
           <ScrollIcons />
-        </div>
+        </div> */}
       </div>
 
       <div class="forest-wrapper">
