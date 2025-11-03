@@ -1,60 +1,52 @@
-import React from 'react';
+import React, {useRef} from 'react';
 import { Row, Col } from 'react-bootstrap';
 
 import './App.css';
 import FishCanvas from './fish/fishRenderer';
-import ScrollIcons from './scrollIcons.js'
+import Experiences from './experiences.js'
 
 function App() {
+  const experienceRef = useRef(null);
+  const scrollToExperiences = () => {
+    if (experienceRef.current) {
+      experienceRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
   return (
     <div className="App">
-      {/* <img src={process.env.PUBLIC_URL + '/profile_image.png'} alt="profile" /> */}
       <div className="header-wrapper">
-        <div class="title-wrapper">
+        <div className="title-wrapper">
           <FishCanvas/>
-          <div class="name-wrapper">
-            <div class="name-contents">
-              <div class="name-title">
+          <div className="name-wrapper">
+            <div className="name-contents">
+              <div className="name-title">
                 DENNIS
               </div>
-              <div class="name-body">
+              <div className="name-body">
                 SOFTWARE DEVELOPER
               </div>
+              <button onClick={scrollToExperiences}>
+                VIEW MY WORK ↓
+              </button>
             </div>
           </div>
         </div>
       </div>
 
-      <div class="content-wrapper">
-        <header class="category-header experience-header">MY EXPERIENCE</header>
-        <Row className = "logos">
-          <Col xs={6} sm={6} md={4}>
-            <img class="logo" alt='shopify' src={`${process.env.PUBLIC_URL}/icons/shopify.png`} />
-          </Col>
-          <Col xs={6} sm={6} md={4}>
-            <img class="logo" alt='schneider electric' src={`${process.env.PUBLIC_URL}/icons/schneider-electric.png`} />
-          </Col>
-        </Row>
-        <div>
-          <ScrollIcons />
-        </div>
-      </div>
-      
-      <div class="beach-wrapper">
-        <img class="beach-image beach1" alt='beach' src={`${process.env.PUBLIC_URL}/scenery/beach1.png`} />
-        <img class="beach-image beach2" alt='beach' src={`${process.env.PUBLIC_URL}/scenery/beach2.png`} />
+      <Experiences ref={experienceRef}/>
+
+      <div className="beach-wrapper">
+        <img className="beach-image beach1" alt='beach' src={`${process.env.PUBLIC_URL}/scenery/beach1.png`} />
+        <img className="beach-image beach2" alt='beach' src={`${process.env.PUBLIC_URL}/scenery/beach2.png`} />
       </div>
 
-      <div class="content-wrapper">
-        <header class="category-header redirects-header">PROJECTS AND SOCIALS</header>
-        {/* <div>
-          <ScrollIcons />
-        </div> */}
+      <div className="content-wrapper">
+        <header className="category-header redirects-header">Projects and Socials</header>
       </div>
 
-      <div class="forest-wrapper">
-        <img class="forest-image" alt='forest' src={`${process.env.PUBLIC_URL}/scenery/forest.png`} />
-        
+      <div className="forest-wrapper">
+        <img className="forest-image" alt='forest' src={`${process.env.PUBLIC_URL}/scenery/forest.png`} />
       </div>
     </div>
   );
