@@ -1,21 +1,22 @@
-import React, {useRef} from 'react';
-import { Row, Col } from 'react-bootstrap';
+import {useRef} from 'react';
 
 import './App.css';
 import FishCanvas from './fish/fishRenderer';
+import TopNav from './topNav.js';
 import Experiences from './experiences.js'
 
 function App() {
   const experienceRef = useRef(null);
   const scrollToExperiences = () => {
     if (experienceRef.current) {
-      experienceRef.current.scrollIntoView({ behavior: 'smooth' });
+      experienceRef.current.scrollIntoView({behavior: 'smooth'});
     }
   };
 
   return (
     <div className="App">
-      <div className="header-wrapper">
+      <TopNav/>
+      <div className="header-wrapper" id="home">
         <div className="title-wrapper">
           <FishCanvas/>
           <div className="name-wrapper">
@@ -34,7 +35,7 @@ function App() {
         </div>
       </div>
 
-      <Experiences ref={experienceRef}/>
+      <Experiences/>
 
       <div className="beach-wrapper">
         <img className="beach-image beach1" alt='beach' src={`${process.env.PUBLIC_URL}/scenery/beach1.png`} />
@@ -42,7 +43,7 @@ function App() {
       </div>
 
       <div className="content-wrapper">
-        <header className="category-header redirects-header">Projects and Socials</header>
+        <header className="category-header redirects-header">Projects</header>
       </div>
 
       <div className="forest-wrapper">

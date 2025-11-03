@@ -1,13 +1,11 @@
-import React, { forwardRef } from 'react';
 import { Row, Col } from 'react-bootstrap';
-import ScrollIcons from './scrollIcons.js';
 
-const Experiences = forwardRef((props, ref) => {
+function Experiences() {
   return (
-    <div className="content-wrapper" ref={ref}>
+    <div className="content-wrapper scroll-target" id="experience">
       <header className="category-header experience-header">Experience</header>
       <Row className="logos justify-content-center">
-        <Col xs={12} sm={10} md={8}>
+        <Col xs={12} sm={10} md={10}>
           <div className="logo">
             <div className="logo-image-label">
               <img alt='google' src={`${process.env.PUBLIC_URL}/icons/google.png`} />
@@ -20,7 +18,7 @@ const Experiences = forwardRef((props, ref) => {
           </div>
         </Col>
 
-        <Col xs={12} sm={10} md={8}>
+        <Col xs={12} sm={10} md={10}>
           <div className="logo">
             <div className="logo-image-label">
               <img alt='shopify' src={`${process.env.PUBLIC_URL}/icons/shopify.png`} />
@@ -33,7 +31,7 @@ const Experiences = forwardRef((props, ref) => {
           </div>
         </Col>
 
-        <Col xs={12} sm={10} md={8}>
+        <Col xs={12} sm={10} md={10}>
           <div className="logo">
             <div className="logo-image-label">
               <img alt='schneider' src={`${process.env.PUBLIC_URL}/icons/schneider-electric.png`} />
@@ -46,12 +44,8 @@ const Experiences = forwardRef((props, ref) => {
           </div>
         </Col>
       </Row>
-
-      <div>
-        <ScrollIcons />
-      </div>
     </div>
   );
-});
+};
 
 export default Experiences;
