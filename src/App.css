@@ -446,7 +446,7 @@ html, body {
   }
 }
 
-@media only screen and (min-width: 768px) {
+@media only screen and (min-width: 768px) and (orientation: portrait) {
   .navbar {
     height: max-content;
 
@@ -456,11 +456,15 @@ html, body {
   }
 
   .beach-wrapper {
-    margin-top: 25vh;
+    margin-top: 0vh;
     height: 60vh;
   }
   .beach-image {
     height: 200vh;
+  }
+
+  .forest-image {
+    height: 125vh;
   }
 
   .screenshot {
@@ -488,14 +492,14 @@ html, body {
   
   .beach-wrapper {
     margin-top: 50vh;
-    height: 125vh;
+    height: 50vh;
   }
   .beach-image {
-    height: 400vh;
+    height: 300vh;
   }
 
   .forest-image {
-    height: 400vh;
+    height: 200vh;
   }
 
   .screenshot {
@@ -526,7 +530,7 @@ html, body {
     height: 60vh;
   }
   .beach-image {
-    height: 225vh;
+    height: 250vh;
   }
 
   .forest-image {
