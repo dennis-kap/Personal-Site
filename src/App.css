@@ -284,7 +284,7 @@
   margin-top: 40vh;
 }
 
-@media only screen and (max-width: 600px) {
+@media only screen and (max-width: 600px) and (orientation: portrait) {
   .navbar {
     height: max-content;
   }
@@ -306,6 +306,8 @@
 
   .logo {
     width: auto !important;
+    margin-right: auto !important;
+    margin-left: auto !important;
   }
 
   .screenshot {
@@ -390,6 +392,41 @@
   }
 }
 
+@media only screen and (min-width: 768px) and (orientation: landscape) {
+  .navbar {
+    height: max-content;
+  }
+  .navbar-collapse.show {
+    height: 60vh;
+  }
+  
+  .beach-wrapper {
+    margin-top: 50vh;
+    height: 125vh;
+  }
+  .beach-image {
+    height: 400vh;
+  }
+
+  .forest-image {
+    height: 400vh;
+  }
+
+  .screenshot {
+    height: 350px;
+    flex-direction: column;
+  }
+  .screenshot img {
+    max-height: 150px;
+  }
+  .screenshot-image {
+    width: 100%;
+  }
+  .screenshot-body {
+    width: 100%;
+  }
+}
+
 @media only screen and (min-width: 992px) {
   .navbar {
     height: 8vh;
@@ -403,6 +440,10 @@
     height: 60vh;
   }
   .beach-image {
+    height: 225vh;
+  }
+
+  .forest-image {
     height: 200vh;
   }
 
