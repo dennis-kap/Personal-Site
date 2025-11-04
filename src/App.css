@@ -5,6 +5,7 @@ html, body {
   height: 100%;
   box-sizing: border-box;
 
+  background-color: #1a2e4d;
   background: linear-gradient(
       to bottom,
       #1a2e4d,
