@@ -491,15 +491,16 @@ html, body {
   }
   
   .beach-wrapper {
-    margin-top: 50vh;
-    height: 50vh;
+    margin-top: 20vh;
+    height: 100vh;
+    margin-bottom: 60vh;
   }
   .beach-image {
     height: 300vh;
   }
 
   .forest-image {
-    height: 200vh;
+    height: 400vh;
   }
 
   .screenshot {
@@ -534,7 +535,7 @@ html, body {
   }
 
   .forest-image {
-    height: 200vh;
+    height: 220vh;
   }
 
   .projects-wrapper {
