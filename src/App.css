@@ -201,7 +201,9 @@ html, body {
 }
 
 .content-wrapper {
-  place-items: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   text-align: center;
   position: absolute;
   width: 100%;
@@ -327,6 +329,13 @@ html, body {
     height: 60vh;
   }
   
+  .content-wrapper {
+    /* place-items: unset; */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
   .beach-wrapper {
     margin-top: 50vh;
     height: 50vh;
