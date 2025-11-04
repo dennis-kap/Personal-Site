@@ -1,15 +1,14 @@
-import {useRef} from 'react';
-
 import './App.css';
 import FishCanvas from './fish/fishRenderer';
 import TopNav from './topNav.js';
 import Experiences from './experiences.js'
+import Projects from './projects.js'
 
 function App() {
-  const experienceRef = useRef(null);
   const scrollToExperiences = () => {
-    if (experienceRef.current) {
-      experienceRef.current.scrollIntoView({behavior: 'smooth'});
+    const element = document.getElementById('experience');
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth' });
     }
   };
 
@@ -42,9 +41,7 @@ function App() {
         <img className="beach-image beach2" alt='beach' src={`${process.env.PUBLIC_URL}/scenery/beach2.png`} />
       </div>
 
-      <div className="content-wrapper">
-        <header className="category-header redirects-header">Projects</header>
-      </div>
+      <Projects/>
 
       <div className="forest-wrapper">
         <img className="forest-image" alt='forest' src={`${process.env.PUBLIC_URL}/scenery/forest.png`} />

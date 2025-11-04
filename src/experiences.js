@@ -2,8 +2,8 @@ import { Row, Col } from 'react-bootstrap';
 
 function Experiences() {
   return (
-    <div className="content-wrapper scroll-target" id="experience">
-      <header className="category-header experience-header">Experience</header>
+    <div className="content-wrapper">
+      <header className="category-header scroll-target" id="experience">Experience</header>
       <Row className="logos justify-content-center">
         <Col xs={12} sm={10} md={10}>
           <div className="logo">

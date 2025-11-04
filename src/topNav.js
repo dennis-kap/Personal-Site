@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import Container from 'react-bootstrap/Container';
 import Nav from 'react-bootstrap/Nav';
 import Navbar from 'react-bootstrap/Navbar';
@@ -33,18 +33,18 @@ export default function TopNav() {
         <Navbar.Toggle aria-controls="basic-navbar-nav" />
         <Navbar.Collapse id="basic-navbar-nav">
             <Nav className="me-auto">
-              <Nav.Link href="#home">Home</Nav.Link>
-              <Nav.Link href="#experience">Experience</Nav.Link>
-              <Nav.Link href="#projects">Projects</Nav.Link>
+              <Nav.Link href="#home" active={false}>Home</Nav.Link>
+              <Nav.Link href="#experience" active={false}>Experience</Nav.Link>
+              <Nav.Link href="#projects" active={false}>Projects</Nav.Link>
             </Nav>
             <hr/>
             <Nav>
               <NavDropdown.Divider />
-              <Nav.Link href="https://www.linkedin.com/in/dennis-kapitantchouk/">
+              <Nav.Link href="https://www.linkedin.com/in/dennis-kapitantchouk/" active={false}>
                 <FontAwesomeIcon icon={faLinkedin} />
                 LinkedIn
               </Nav.Link>
-              <Nav.Link href="https://github.com/dennis-kap">
+              <Nav.Link href="https://github.com/dennis-kap" active={false}>
                 <FontAwesomeIcon icon={faGithub} />
                 GitHub
               </Nav.Link>
