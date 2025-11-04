@@ -305,7 +305,7 @@
   }
 
   .logo {
-    width: auto;
+    width: auto !important;
   }
 
   .screenshot {
