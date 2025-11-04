@@ -301,14 +301,19 @@
   }
 
   .forest-image {
-    height: 190vh;
+    height: 225vh;
   }
 
-  .logo {
+  .logos {
+    display: grid;
+    place-items: center;
+  }
+
+  /* .logo {
     width: auto !important;
     margin-right: auto !important;
     margin-left: auto !important;
-  }
+  } */
 
   .screenshot {
     height: 350px;
