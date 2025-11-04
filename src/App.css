@@ -331,14 +331,15 @@ html, body {
   }
 
   .logos {
-    display: grid;
-    place-items: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
   }
 
   .logo {
     width: auto !important;
-    margin-right: auto !important;
-    margin-left: auto !important;
+    justify-self: center;
+    margin: 10px auto;
   }
 
   .screenshot {
