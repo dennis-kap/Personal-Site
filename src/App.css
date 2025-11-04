@@ -314,11 +314,11 @@ html {
     place-items: center;
   }
 
-  /* .logo {
+  .logo {
     width: auto !important;
     margin-right: auto !important;
     margin-left: auto !important;
-  } */
+  }
 
   .screenshot {
     height: 350px;
