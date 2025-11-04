@@ -1,4 +1,4 @@
 # Welcome to my personal website
 
-This website is currently a work in progress. I will be making additions iteratively.
+https://dennis-kap.github.io/Personal-Site/
 
